@@ -20,8 +20,9 @@ export default function PosterPhoto({ src }: { src: string }) {
       ref={ref}
       src={src}
       alt=""
+      draggable={false}
       onError={() => setOk(false)}
-      style={{ width: "100%", height: 86, objectFit: "cover", filter: "grayscale(.4) contrast(1.15) sepia(.15)" }}
+      style={{ display: "block", width: "100%", aspectRatio: "1 / 1", objectFit: "cover", filter: "grayscale(.4) contrast(1.15) sepia(.15)" }}
     />
   );
 }

@@ -48,11 +48,10 @@ export default async function Home() {
     <main className="page">
       <DemoBanner />
       <header
-        style={{ position: "relative", height: 450, background: "var(--wall)", padding: "20px 16px", overflow: "hidden" }}
+        style={{ position: "relative", background: "var(--wall)", padding: "20px 12px 170px", overflow: "hidden" }}
       >
-        <PosterWall pastRuns={pastRuns} wallUrl={wallUrl} />
         <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 2 }}>
-          <span style={{ color: "#fff", background: "var(--ink)", padding: "6px 10px", fontSize: 15, fontWeight: 900, letterSpacing: ".04em" }}>{r.name.toUpperCase()} RUNS NYC</span>
+          <span style={{ color: "#fff", background: "var(--ink)", padding: "6px 10px", fontSize: "clamp(12px, 3.8vw, 15px)", fontWeight: 900, letterSpacing: ".04em" }}>{r.name.toUpperCase()} RUNS NYC</span>
           {r.donate_url && (
           <a
             href={r.donate_url}
@@ -79,30 +78,33 @@ export default async function Home() {
           aria-hidden="true"
           style={{
             position: "absolute",
-            top: 4,
-            right: 104, // just left of the Donate pill, as in the mockup
-            width: 104,
-            height: 104,
+            top: 6,
+            right: 94, // between the name and the Donate pill
+            width: 88,
+            height: 88,
             borderRadius: "50%",
             background: "var(--sun)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             textAlign: "center",
-            fontSize: 13,
+            fontSize: 11,
             fontWeight: 900,
             lineHeight: 1.05,
             boxShadow: "0 6px 14px rgba(0,0,0,.18)",
-            zIndex: 2,
+            zIndex: 3,
           }}
         >
           26.2 MILES
           <br />5 BOROUGHS
           <br />0 CHILL
         </div>
+        <div style={{ marginTop: 18 }}>
+          <PosterWall pastRuns={pastRuns} wallUrl={wallUrl} />
+        </div>
       </header>
 
-      <section style={{ position: "relative", marginTop: -190, padding: "0 22px", display: "flex", justifyContent: "center" }}>
+      <section style={{ position: "relative", marginTop: -150, padding: "0 22px", display: "flex", justifyContent: "center" }}>
         <div style={{ position: "relative", width: "100%", transform: "rotate(-1.2deg)", filter: "drop-shadow(0 12px 14px rgba(0,0,0,.28))" }}>
           <div style={{ ...tape, left: -14, top: -10, transform: "rotate(-28deg)" }} />
           <div style={{ ...tape, right: -14, top: -8, transform: "rotate(24deg)" }} />

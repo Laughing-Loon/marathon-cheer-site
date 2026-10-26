@@ -1,16 +1,19 @@
-import type { CSSProperties, ReactNode } from "react";
+"use client";
+
+import { useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import type { PastRun } from "@/lib/runner";
 import PosterPhoto from "./PosterPhoto";
 
-// Where posters sit on the wall above the flyer (left as % of width, top in px).
-const SLOTS: { left: string; top: number; width: number; rotate: number }[] = [
-  { left: "-3%", top: 58, width: 118, rotate: -4 },
-  { left: "31%", top: 50, width: 116, rotate: 3 },
-  { left: "66%", top: 62, width: 118, rotate: -2.5 },
-  { left: "13%", top: 150, width: 116, rotate: 2.5 },
-  { left: "47%", top: 142, width: 116, rotate: -3.5 },
-  { left: "79%", top: 156, width: 118, rotate: 4 },
-]
+// Six slots in a loose, slightly overlapping cluster (left/top as % of the square wall, tilt in degrees).
+const SLOTS = [
+  { left: 0, top: 0, rotate: -4 },
+  { left: 31, top: 3, rotate: 3 },
+  { left: 63, top: 0, rotate: -2.5 },
+  { left: 5, top: 47, rotate: 3 },
+  { left: 35, top: 50, rotate: -3 },
+  { left: 64, top: 46, rotate: 4 },
+];
+const POSTER_WIDTH = "36%";
 
 const INK = "#1A1A17";
 
@@ -23,8 +26,8 @@ function Paper({ bg, color = INK, children, style }: { bg: string; color?: strin
   return (
     <div
       style={{
-        height: 170,
-        padding: "10px 9px",
+        minHeight: 150,
+        padding: "10px 9px 14px",
         background: `${wrinkles}, ${bg}`,
         color,
         clipPath: ragged,
@@ -75,7 +78,7 @@ const JOKES: ReactNode[] = [
 function RunPoster({ run, wallUrl }: { run: PastRun; wallUrl: string | null }) {
   const photo = run.photo_path && wallUrl ? wallUrl + run.photo_path : null;
   return (
-    <Paper bg="#F4F1E8" style={{ padding: 6, gap: 3 }}>
+    <Paper bg="#F4F1E8" style={{ minHeight: 0, padding: "6px 6px 12px", gap: 3 }}>
       {photo ? <PosterPhoto src={photo} /> : null}
       <span style={{ fontSize: 15, fontWeight: 900, lineHeight: 0.95, textTransform: "uppercase" }}>{run.title}</span>
       {run.subtitle ? <span style={{ fontSize: 11, fontWeight: 900 }}>{run.subtitle}</span> : null}
@@ -84,23 +87,62 @@ function RunPoster({ run, wallUrl }: { run: PastRun; wallUrl: string | null }) {
   );
 }
 
-/** Wheatpasted posters on the wall behind the flyer: the runner's past runs first, then filler. */
+/**
+ * Wheatpasted posters on the wall behind the flyer: the runner's own photos first, then filler.
+ * Posters overlap a little; drag one (finger or mouse) to move it, and it comes to the front.
+ */
 export default function PosterWall({ pastRuns, wallUrl }: { pastRuns: PastRun[]; wallUrl: string | null }) {
   const posters = [...pastRuns.map((r) => <RunPoster key={r.id} run={r} wallUrl={wallUrl} />), ...JOKES].slice(0, SLOTS.length);
+  const [offsets, setOffsets] = useState(() => SLOTS.map(() => ({ x: 0, y: 0 })));
+  // Stacking order: later in the list is on top. The first row starts on top so its captions show.
+  const [order, setOrder] = useState(() => [5, 4, 3, 2, 1, 0]);
+  const [dragging, setDragging] = useState<number | null>(null);
+  const drag = useRef<{ i: number; startX: number; startY: number; ox: number; oy: number } | null>(null);
+  const wall = useRef<HTMLDivElement>(null);
+
+  function down(i: number, e: PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { i, startX: e.clientX, startY: e.clientY, ox: offsets[i].x, oy: offsets[i].y };
+    setDragging(i);
+    setOrder((o) => [...o.filter((n) => n !== i), i]);
+  }
+
+  function move(e: PointerEvent<HTMLDivElement>) {
+    const d = drag.current;
+    if (!d || !wall.current) return;
+    const max = wall.current.clientWidth * 0.4; // keep posters mostly on the wall
+    const clamp = (v: number) => Math.max(-max, Math.min(max, v));
+    const x = clamp(d.ox + e.clientX - d.startX);
+    const y = clamp(d.oy + e.clientY - d.startY);
+    setOffsets((o) => o.map((p, n) => (n === d.i ? { x, y } : p)));
+  }
+
+  function up() {
+    drag.current = null;
+    setDragging(null);
+  }
+
   return (
-    <div aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-      {/* Scraps of older, torn-off posters */}
-      <span style={{ position: "absolute", left: "18%", top: 40, width: 60, height: 40, background: "rgba(244,241,232,.55)", transform: "rotate(8deg)", clipPath: "polygon(0 10%, 100% 0, 85% 100%, 10% 80%)" }} />
-      <span style={{ position: "absolute", left: "68%", top: 150, width: 70, height: 50, background: "rgba(247,201,213,.45)", transform: "rotate(-6deg)", clipPath: "polygon(5% 0, 100% 20%, 90% 90%, 0 100%)" }} />
+    <div ref={wall} style={{ position: "relative", width: "100%", aspectRatio: "1 / 1" }}>
       {posters.map((p, i) => (
         <div
           key={i}
+          aria-hidden="true"
+          onPointerDown={(e) => down(i, e)}
+          onPointerMove={move}
+          onPointerUp={up}
+          onPointerCancel={up}
           style={{
             position: "absolute",
-            left: SLOTS[i].left,
-            top: SLOTS[i].top,
-            width: SLOTS[i].width,
-            transform: `rotate(${SLOTS[i].rotate}deg)`,
+            left: `${SLOTS[i].left}%`,
+            top: `${SLOTS[i].top}%`,
+            width: POSTER_WIDTH,
+            zIndex: order.indexOf(i) + 1,
+            transform: `translate(${offsets[i].x}px, ${offsets[i].y}px) rotate(${SLOTS[i].rotate}deg) scale(${dragging === i ? 1.05 : 1})`,
+            filter: dragging === i ? "drop-shadow(0 10px 12px rgba(0,0,0,.25))" : undefined,
+            touchAction: "none", // lets a finger drag the poster instead of scrolling the page
+            cursor: dragging === i ? "grabbing" : "grab",
+            userSelect: "none",
           }}
         >
           {p}
