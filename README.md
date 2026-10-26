@@ -131,3 +131,7 @@ The structure carries over, but the NYC data doesn't:
 - Friends' photos are resized in the browser before upload, which also drops their location data.
 - The upload form asks people to keep strangers out of shot.
 - Everything personal is in your Supabase project and can be deleted there at any time.
+
+## License
+
+MIT: use it, copy it, change it, run your own. See [LICENSE](LICENSE). The Outfit font (in `app/fonts` and `assets/fonts`) is under the SIL Open Font License (see `OFL.txt` next to the font files).
